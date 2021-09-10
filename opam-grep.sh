@@ -47,7 +47,7 @@ search() {
   for pkg in $(cat "$PACKAGES"); do
     spin
     check "$pkg"
-    if grep -qr "$1" "$DST/$pkg"; then
+    if grep -qsr "$1" "$DST/$pkg"; then
       pkg=$(echo "$pkg" | cut -d. -f1)
       echo -e "\033[2K\r$pkg matches your regexp."
     fi
