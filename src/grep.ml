@@ -1,3 +1,6 @@
+module Cmd = Bos.Cmd
+module Exec = Bos.OS.Cmd
+
 let ( // ) = Fpath.( / )
 let result = Rresult.R.failwith_error_msg
 
@@ -59,18 +62,6 @@ let check ~dst pkg =
     result (Bos.OS.Path.move tmpdir pkgdir)
   end
 
-let spin =
-  let spin = ref "/" in
-  fun () ->
-    print_string ("\033[2K\rSearching: " ^ !spin);
-    flush stdout;
-    match !spin with
-    | "|" -> spin := "/"
-    | "/" -> spin := "-"
-    | "-" -> spin := "\\"
-    | "\\" -> spin := "|"
-    | _ -> assert false
-
 let get_grep_cmd () =
   (* TODO: Avoid using dummy arguments *)
   let dir = result (Bos.OS.Dir.current ()) in
@@ -86,17 +77,24 @@ let get_grep_cmd () =
   else
     failwith "Could not find any grep command"
 
+let bar ~total =
+  let module Line = Progress.Line in
+  Line.list [ Line.spinner (); Line.bar total; Line.count_to total ]
+
 let search ~regexp =
   let dst = dst () in
   let pkgs = sync ~dst in
   let grep = get_grep_cmd () in
-  List.iter begin fun pkg ->
-    spin ();
-    check ~dst pkg;
-    match Bos.OS.Cmd.run (grep ~regexp ~dir:(dst // pkg)) with
-    | Ok () ->
-        let pkg = List.hd (String.split_on_char '.' pkg) in
-        print_endline ("\033[2K\r"^pkg^" matches your regexp.")
-    | Error _ -> () (* Ignore errors here *)
-  end pkgs;
-  print_endline "\033[2K\rUpdate complete."
+  Progress.with_reporter (bar ~total:(List.length pkgs)) begin fun progress ->
+    List.iteri begin fun i pkg ->
+      progress i;
+      check ~dst pkg;
+      match Exec.run (grep ~regexp ~dir:(dst // pkg)) with
+      | Ok () ->
+          let pkg = List.hd (String.split_on_char '.' pkg) in
+          Progress.interject_with begin fun () ->
+            print_endline (pkg^" matches your regexp.")
+          end
+      | Error _ -> () (* Ignore errors here *)
+    end pkgs;
+  end

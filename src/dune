@@ -2,6 +2,7 @@
  (name main)
  (public_name opam-grep)
  (libraries
+  progress
   cmdliner
   rresult
   fpath
