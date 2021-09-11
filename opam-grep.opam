@@ -10,11 +10,11 @@ bug-reports: "https://github.com/kit-ty-kate/opam-grep/issues"
 flags: plugin
 build: ["dune" "build" "-p" name "-j" jobs]
 depends: [
-  "ocaml" {>= "4.02"}
+  "ocaml" {>= "4.08"}
   "dune" {>= "2.0"}
-  "progress"
-  "cmdliner"
-  "fpath"
-  "bos"
+  "progress" {>= "0.2.1"}
+  "cmdliner" {>= "1.0.4"}
+  "fpath" {>= "0.7.3"}
+  "bos" {>= "0.2.0"}
 ]
 available: os != "win32"
