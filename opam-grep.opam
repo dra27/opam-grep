@@ -8,4 +8,13 @@ homepage: "https://github.com/kit-ty-kate/opam-grep"
 dev-repo: "git://github.com/kit-ty-kate/opam-grep.git"
 bug-reports: "https://github.com/kit-ty-kate/opam-grep/issues"
 flags: plugin
+build: ["dune" "build" "-p" name "-j" jobs]
+depends: [
+  "ocaml" {>= "4.02"}
+  "dune" {>= "2.0"}
+  "progress"
+  "cmdliner"
+  "fpath"
+  "bos"
+]
 available: os != "win32"
