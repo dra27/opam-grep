@@ -25,10 +25,6 @@ let list_split_bunch n l =
   in
   accu [] l
 
-let successful_cmd ~msg = function
-  | (x, (_, `Exited 0)) -> x
-  | (_, (_, (`Exited _ | `Signaled _))) -> raise (OpamGrepError msg)
-
 let dst () =
   let cachedir =
     match Sys.getenv_opt "XDG_CACHE_HOME" with
@@ -43,13 +39,19 @@ let dst () =
 let sync ~dst =
   let _exists : bool = result (Dir.create ~path:true dst) in
   let pkgs_bunch =
-    result (Exec.out_lines (Exec.run_out Cmd.(v "opam" % "list" % "-A" % "-s" % "--color=never"))) |>
-    successful_cmd ~msg:"opam list failed" |>
-    list_split_bunch 255 (* Smallest value of MAX_ARG: https://www.in-ulm.de/~mascheck/various/argmax/ *)
+    Cmd.(v "opam" % "list" % "-A" % "-s" % "--color=never") |>
+    Exec.run_out |>
+    Exec.out_lines |>
+    Exec.success |>
+    result |>
+    list_split_bunch 255 (* NOTE: Smallest value of MAX_ARG: https://www.in-ulm.de/~mascheck/various/argmax/ *)
   in
   let opam_show pkgs =
-    result (Exec.out_lines (Exec.run_out Cmd.(v "opam" % "show" % "--color=never" % "-f" % "package" %% of_list pkgs))) |>
-    successful_cmd ~msg:"opam grep failed"
+    Cmd.(v "opam" % "show" % "--color=never" % "-f" % "package" %% of_list pkgs) |>
+    Exec.run_out |>
+    Exec.out_lines |>
+    Exec.success |>
+    result
   in
   List.map opam_show pkgs_bunch |> List.concat |> List.sort_uniq String.compare
 
@@ -58,9 +60,15 @@ let check ~dst pkg =
   let pkgdir = dst // pkg in
   if not (result (Dir.exists pkgdir)) then begin
     result (Dir.delete ~recurse:true tmpdir);
-    let _ : (unit, _) result = Exec.success (Exec.out_null (Exec.run_out ~err:Exec.err_null Cmd.(v "opam" % "source" % "--dir" % Fpath.to_string tmpdir % pkg))) in
+    let _ : (unit, _) result =
+      Cmd.(v "opam" % "source" % "--dir" % Fpath.to_string tmpdir % pkg) |>
+      Exec.run_out ~err:Exec.err_null |>
+      Exec.out_null |>
+      Exec.success
+    in
     result (Path.move tmpdir pkgdir)
-  end
+  end;
+  pkgdir
 
 let get_grep_cmd () =
   let ripgrep = Cmd.v "rg" in
@@ -88,8 +96,8 @@ let search ~regexp =
   Progress.with_reporter (bar ~total:(List.length pkgs)) begin fun progress ->
     List.iter begin fun pkg ->
       progress 1;
-      check ~dst pkg;
-      match Exec.run (grep % "--binary" % "-qsr" % "-e" % regexp % Fpath.to_string (dst // pkg)) with
+      let pkgdir = check ~dst pkg in
+      match Exec.run (grep % "--binary" % "-qsr" % "-e" % regexp % Fpath.to_string pkgdir) with
       | Ok () ->
           let pkg = List.hd (String.split_on_char '.' pkg) in
           Progress.interject_with begin fun () ->
