@@ -41,13 +41,24 @@ spin() {
   esac
 }
 
+get_grep_cmd() {
+  if command -v ugrep > /dev/null; then
+    grep_cmd=ugrep
+  elif command -v rg > /dev/null; then
+    grep_cmd=rg
+  else
+    grep_cmd=grep
+  fi
+}
+
 search() {
   sync
+  get_grep_cmd
 
   for pkg in $(cat "$PACKAGES"); do
     spin
     check "$pkg"
-    if grep -qsr -e "$1" "$DST/$pkg"; then
+    if "${grep_cmd}" --binary -qsr -e "$1" "$DST/$pkg"; then
       pkg=$(echo "$pkg" | cut -d. -f1)
       echo -e "\033[2K\r$pkg matches your regexp."
     fi
