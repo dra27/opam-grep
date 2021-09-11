@@ -76,8 +76,10 @@ let bar ~total =
 
 let search ~regexp =
   let dst = dst () in
+  prerr_endline "[Info] Getting the list of all known opam packages..";
   let pkgs = sync ~dst in
   let grep = get_grep_cmd () in
+  prerr_endline ("[Info] Fetching and grepping using "^Cmd.get_line_tool grep^"..");
   Progress.with_reporter (bar ~total:(List.length pkgs)) begin fun progress ->
     List.iter begin fun pkg ->
       progress 1;
