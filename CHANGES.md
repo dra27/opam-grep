@@ -4,6 +4,7 @@ v0.2.0 (11/09/2021)
 - Complete rewrite from POSIX shell script to OCaml, making it more portable
 - Use the faster `ripgrep` and `ugrep` over `grep` when available (suggestion from @Engil)
 - Ignore read failures from grep (symlinks to unreachable files can make it fail)
+- Use `$XDG_CACHE_HOME` when available to store the archives instead of just `~/.cache`
 - Use the `progress` library to show progress instead of a non-portable/DIY spinner
 - Use the `cmdliner` library to handle arguments and produce a manpage via --help
 
