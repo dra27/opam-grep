@@ -1,10 +1,13 @@
-opam-grep greps anything in the sources of the latest version of every opam packages.
+opam-grep is an opam plugin that greps through the sources of all opam packages.
 
-This is sometimes useful for OCaml library developers to know which portions of their library is used.
+To install it, simply call:
+```
+$ opam install opam-grep
+```
+Then to use it, simply call:
+```
+$ opam grep "your regexp"
+```
+*Side note: currently opam-grep will cache the sources in your cache directory (`$XDG_CACHE_HOME/opam-grep`), so a few GB of available disk space is most likely required.*
 
-```
-Usage:
-  - ./opam-grep.sh --help
-  - ./opam-grep.sh --version
-  - ./opam-grep.sh <regexp>
-```
+I hope this can help core compiler and community library devs alike, to know which part of their software is used in the wild.
