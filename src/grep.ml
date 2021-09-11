@@ -55,7 +55,7 @@ let check ~dst pkg =
   let tmpdir = dst // "tmp" in
   let pkgdir = dst // pkg in
   if not (result (Bos.OS.Dir.exists pkgdir)) then begin
-    let _ : (unit, _) result = Bos.OS.Cmd.run (Commands.opam_source ~path:tmpdir pkg) in
+    let _ : (unit, _) result = Bos.OS.Cmd.success (Bos.OS.Cmd.out_null (Bos.OS.Cmd.run_out (Commands.opam_source ~path:tmpdir pkg))) in
     result (Bos.OS.Path.move tmpdir pkgdir)
   end
 
