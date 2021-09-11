@@ -1,5 +1,7 @@
 module Cmd = Bos.Cmd
 module Exec = Bos.OS.Cmd
+module Dir = Bos.OS.Dir
+module Path = Bos.OS.Path
 
 let ( // ) = Fpath.( / )
 let result = Rresult.R.failwith_error_msg
@@ -22,12 +24,12 @@ let successful_cmd ~msg = function
   | (_, (_, (`Exited _ | `Signaled _))) -> failwith msg
 
 module Commands = struct
-  let opam_list = Bos.Cmd.(v "opam" % "list" % "-A" % "-s" % "--color=never")
-  let opam_show pkgs = Bos.Cmd.(v "opam" % "show" % "--color=never" % "-f" % "package" %% of_list pkgs)
-  let opam_source ~path pkg = Bos.Cmd.(v "opam" % "source" % "--dir" % Fpath.to_string path % pkg)
-  let ripgrep ~regexp ~dir = Bos.Cmd.(v "rg" % "--binary" % "-qsr" % "-e" % regexp % Fpath.to_string dir)
-  let ugrep ~regexp ~dir = Bos.Cmd.(v "ugrep" % "--binary" % "-qsr" % "-e" % regexp % Fpath.to_string dir)
-  let grep ~regexp ~dir = Bos.Cmd.(v "grep" % "--binary" % "-qsr" % "-e" % regexp % Fpath.to_string dir)
+  let opam_list = Cmd.(v "opam" % "list" % "-A" % "-s" % "--color=never")
+  let opam_show pkgs = Cmd.(v "opam" % "show" % "--color=never" % "-f" % "package" %% of_list pkgs)
+  let opam_source ~path pkg = Cmd.(v "opam" % "source" % "--dir" % Fpath.to_string path % pkg)
+  let ripgrep ~regexp ~dir = Cmd.(v "rg" % "--binary" % "-qsr" % "-e" % regexp % Fpath.to_string dir)
+  let ugrep ~regexp ~dir = Cmd.(v "ugrep" % "--binary" % "-qsr" % "-e" % regexp % Fpath.to_string dir)
+  let grep ~regexp ~dir = Cmd.(v "grep" % "--binary" % "-qsr" % "-e" % regexp % Fpath.to_string dir)
 end
 
 let dst () =
@@ -42,14 +44,14 @@ let dst () =
   cachedir // "opam-grep"
 
 let sync ~dst =
-  let _exists : bool = result (Bos.OS.Dir.create ~path:true dst) in
+  let _exists : bool = result (Dir.create ~path:true dst) in
   let pkgs_bunch =
-    result (Bos.OS.Cmd.out_lines (Bos.OS.Cmd.run_out Commands.opam_list)) |>
+    result (Exec.out_lines (Exec.run_out Commands.opam_list)) |>
     successful_cmd ~msg:"opam list failed" |>
     list_split_bunch 100
   in
   let opam_show pkgs =
-    result (Bos.OS.Cmd.out_lines (Bos.OS.Cmd.run_out (Commands.opam_show pkgs))) |>
+    result (Exec.out_lines (Exec.run_out (Commands.opam_show pkgs))) |>
     successful_cmd ~msg:"opam grep failed"
   in
   List.map opam_show pkgs_bunch |> List.concat
@@ -57,23 +59,23 @@ let sync ~dst =
 let check ~dst pkg =
   let tmpdir = dst // "tmp" in
   let pkgdir = dst // pkg in
-  if not (result (Bos.OS.Dir.exists pkgdir)) then begin
-    result (Bos.OS.Dir.delete ~recurse:true tmpdir);
+  if not (result (Dir.exists pkgdir)) then begin
+    result (Dir.delete ~recurse:true tmpdir);
     let _ : (unit, _) result = Exec.success (Exec.out_null (Exec.run_out ~err:Exec.err_null (Commands.opam_source ~path:tmpdir pkg))) in
-    result (Bos.OS.Path.move tmpdir pkgdir)
+    result (Path.move tmpdir pkgdir)
   end
 
 let get_grep_cmd () =
   (* TODO: Avoid using dummy arguments *)
-  let dir = result (Bos.OS.Dir.current ()) in
+  let dir = result (Dir.current ()) in
   let ripgrep = Commands.ripgrep ~regexp:"" ~dir in
   let ugrep = Commands.ugrep ~regexp:"" ~dir in
   let grep = Commands.grep ~regexp:"" ~dir in
-  if result (Bos.OS.Cmd.exists ripgrep) then
+  if result (Exec.exists ripgrep) then
     Commands.ripgrep
-  else if result (Bos.OS.Cmd.exists ugrep) then
+  else if result (Exec.exists ugrep) then
     Commands.ugrep
-  else if result (Bos.OS.Cmd.exists grep) then
+  else if result (Exec.exists grep) then
     Commands.grep
   else
     failwith "Could not find any grep command"
