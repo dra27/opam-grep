@@ -38,6 +38,6 @@ let () =
   Term.exit @@ match Term.eval cmd with
   | `Ok f ->
       begin try f (); `Ok () with
-      | Failure msg -> prerr_endline ("Error: "^msg); exit 1
+      | Grep.OpamGrepError msg -> prerr_endline ("Error: "^msg); exit 1
       end
   | (`Error _ | `Version | `Help) as x -> x

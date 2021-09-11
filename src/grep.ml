@@ -6,9 +6,11 @@ module Path = Bos.OS.Path
 let ( // ) = Fpath.( / )
 let ( % ) = Cmd.( % )
 
+exception OpamGrepError of string
+
 let result = function
   | Ok x -> x
-  | Error (`Msg msg) -> failwith msg
+  | Error (`Msg msg) -> raise (OpamGrepError msg)
 
 let list_split_bunch n l =
   let rec aux i acc = function
@@ -25,7 +27,7 @@ let list_split_bunch n l =
 
 let successful_cmd ~msg = function
   | (x, (_, `Exited 0)) -> x
-  | (_, (_, (`Exited _ | `Signaled _))) -> failwith msg
+  | (_, (_, (`Exited _ | `Signaled _))) -> raise (OpamGrepError msg)
 
 let dst () =
   let cachedir =
@@ -34,7 +36,7 @@ let dst () =
     | None ->
         match Sys.getenv_opt "HOME" with
         | Some homedir -> Fpath.v homedir // ".cache"
-        | None -> failwith "Cannot find your home directory"
+        | None -> raise (OpamGrepError "Cannot find your home directory")
   in
   cachedir // "opam-grep"
 
@@ -71,7 +73,7 @@ let get_grep_cmd () =
   else if result (Exec.exists grep) then
     grep
   else
-    failwith "Could not find any grep command"
+    raise (OpamGrepError "Could not find any grep command")
 
 let bar ~total =
   let module Line = Progress.Line in
