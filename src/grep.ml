@@ -54,7 +54,7 @@ let sync ~dst =
     result (Exec.out_lines (Exec.run_out (Commands.opam_show pkgs))) |>
     successful_cmd ~msg:"opam grep failed"
   in
-  List.map opam_show pkgs_bunch |> List.concat
+  List.map opam_show pkgs_bunch |> List.concat |> List.sort_uniq String.compare
 
 let check ~dst pkg =
   let tmpdir = dst // "tmp" in
