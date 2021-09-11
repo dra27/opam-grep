@@ -7,19 +7,19 @@ let ( & ) = Cmdliner.Arg.( & )
 
 let main regexp_arg main_regexp =
   match regexp_arg, main_regexp with
-  | Some _, Some _ -> `Error (true, "Two regexps given. This is not supported yet")
+  | Some _, Some _ -> `Error (true, "Two regexps given. This is not supported yet") (* TODO *)
   | None, None -> `Error (true, "No regexp given. This is required")
   | Some regexp, None
   | None, Some regexp -> `Ok (fun () -> Grep.search ~regexp)
 
 let regexp_arg =
-  let doc = "TODO" in
+  let doc = "" in (* TODO *)
   Arg.value &
   Arg.opt (Arg.some Arg.string) None &
   Arg.info ["regexp"] ~docv:"REGEXP" ~doc
 
 let main_regexp =
-  let doc = "TODO" in
+  let doc = "" in (* TODO *)
   Arg.value &
   Arg.pos ~rev:true 0 (Arg.some Arg.string) None &
   Arg.info [] ~docv:"REGEXP" ~doc
