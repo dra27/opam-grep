@@ -5,7 +5,10 @@ module Path = Bos.OS.Path
 
 let ( // ) = Fpath.( / )
 let ( % ) = Cmd.( % )
-let result = Rresult.R.failwith_error_msg
+
+let result = function
+  | Ok x -> x
+  | Error (`Msg msg) -> failwith msg
 
 let list_split_bunch n l =
   let rec aux i acc = function

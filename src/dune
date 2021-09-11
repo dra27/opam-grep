@@ -4,6 +4,5 @@
  (libraries
   progress
   cmdliner
-  rresult
   fpath
   bos))
