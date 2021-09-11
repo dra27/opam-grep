@@ -20,7 +20,7 @@ let successful_cmd ~msg = function
 
 module Commands = struct
   let opam_list = Bos.Cmd.(v "opam" % "list" % "-A" % "-s" % "--color=never")
-  let opam_show pkgs = Bos.Cmd.(v "opam" % "show" % "-f" % "package" %% of_list pkgs)
+  let opam_show pkgs = Bos.Cmd.(v "opam" % "show" % "--color=never" % "-f" % "package" %% of_list pkgs)
   let opam_source ~path pkg = Bos.Cmd.(v "opam" % "source" % "--dir" % Fpath.to_string path % pkg)
   let ripgrep ~regexp ~dir = Bos.Cmd.(v "rg" % "--binary" % "-qsr" % "-e" % regexp % Fpath.to_string dir)
   let ugrep ~regexp ~dir = Bos.Cmd.(v "ugrep" % "--binary" % "-qsr" % "-e" % regexp % Fpath.to_string dir)
