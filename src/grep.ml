@@ -5,6 +5,7 @@ module Path = Bos.OS.Path
 
 let ( // ) = Fpath.( / )
 let ( % ) = Cmd.( % )
+let ( %% ) = Cmd.( %% )
 
 exception OpamGrepError of string
 
@@ -39,7 +40,7 @@ let dst () =
 let sync ~dst =
   let _exists : bool = result (Dir.create ~path:true dst) in
   let pkgs_bunch =
-    Cmd.(v "opam" % "list" % "-A" % "-s" % "--color=never") |>
+    (Cmd.v "opam" % "list" % "-A" % "-s" % "--color=never") |>
     Exec.run_out |>
     Exec.out_lines |>
     Exec.success |>
@@ -47,7 +48,7 @@ let sync ~dst =
     list_split_bunch 255 (* NOTE: Smallest value of MAX_ARG: https://www.in-ulm.de/~mascheck/various/argmax/ *)
   in
   let opam_show pkgs =
-    Cmd.(v "opam" % "show" % "--color=never" % "-f" % "package" %% of_list pkgs) |>
+    (Cmd.v "opam" % "show" % "--color=never" % "-f" % "package" %% Cmd.of_list pkgs) |>
     Exec.run_out |>
     Exec.out_lines |>
     Exec.success |>
@@ -61,7 +62,7 @@ let check ~dst pkg =
   if not (result (Dir.exists pkgdir)) then begin
     result (Dir.delete ~recurse:true tmpdir);
     let _ : (unit, _) result =
-      Cmd.(v "opam" % "source" % "--dir" % Fpath.to_string tmpdir % pkg) |>
+      (Cmd.v "opam" % "source" % "--dir" % Fpath.to_string tmpdir % pkg) |>
       Exec.run_out ~err:Exec.err_null |>
       Exec.out_null |>
       Exec.success
