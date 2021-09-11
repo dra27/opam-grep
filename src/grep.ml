@@ -89,8 +89,8 @@ let search ~regexp =
   let pkgs = sync ~dst in
   let grep = get_grep_cmd () in
   Progress.with_reporter (bar ~total:(List.length pkgs)) begin fun progress ->
-    List.iteri begin fun i pkg ->
-      progress i;
+    List.iter begin fun pkg ->
+      progress 1;
       check ~dst pkg;
       match Exec.run (grep ~regexp ~dir:(dst // pkg)) with
       | Ok () ->
