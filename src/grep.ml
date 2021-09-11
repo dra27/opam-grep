@@ -1,3 +1,5 @@
+(* SPDX-License-Identifier: MIT *)
+
 module Cmd = Bos.Cmd
 module Exec = Bos.OS.Cmd
 module Dir = Bos.OS.Dir
