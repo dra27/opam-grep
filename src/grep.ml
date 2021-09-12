@@ -73,18 +73,16 @@ let check ~dst pkg =
   end;
   pkgdir
 
+let greps = [
+  Cmd.v "rg"; (* ripgrep (fast, rust) *)
+  Cmd.v "ugrep"; (* ugrep (fast, C++) *)
+  Cmd.v "grep" (* grep (posix-ish) *)
+]
+
 let get_grep_cmd () =
-  let ripgrep = Cmd.v "rg" in
-  let ugrep = Cmd.v "ugrep" in
-  let grep = Cmd.v "grep" in
-  if result (Exec.exists ripgrep) then
-    ripgrep
-  else if result (Exec.exists ugrep) then
-    ugrep
-  else if result (Exec.exists grep) then
-    grep
-  else
-    raise (OpamGrepError "Could not find any grep command")
+  match List.find_opt (fun grep -> result (Exec.exists grep)) greps with
+  | Some grep -> grep
+  | None -> raise (OpamGrepError "Could not find any grep command")
 
 let bar ~total =
   let module Line = Progress.Line in
