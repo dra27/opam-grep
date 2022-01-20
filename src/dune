@@ -6,7 +6,8 @@
   cmdliner
   fpath
   bos
-  opam-repository))
+  opam-repository
+  opam-client))
 
 (rule
  (target config.ml)
