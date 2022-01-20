@@ -7,26 +7,12 @@ module Path = Bos.OS.Path
 
 let ( // ) = Fpath.( / )
 let ( % ) = Cmd.( % )
-let ( %% ) = Cmd.( %% )
 
 exception OpamGrepError of string
 
 let result = function
   | Ok x -> x
   | Error (`Msg msg) -> raise (OpamGrepError msg)
-
-let list_split_bunch n l =
-  let rec aux i acc = function
-    | [] -> (acc, [])
-    | x::xs when i < n -> aux (succ i) (x :: acc) xs
-    | l -> (acc, l)
-  in
-  let rec accu acc l =
-    match aux 0 [] l with
-    | (x, []) -> x :: acc
-    | (x, (_::_ as rest)) -> accu (x :: acc) rest
-  in
-  accu [] l
 
 let dst () =
   let cachedir =
@@ -40,23 +26,35 @@ let dst () =
   cachedir // "opam-grep"
 
 let sync ~dst =
-  let _exists : bool = result (Dir.create ~path:true dst) in
-  let pkgs_bunch =
-    (Cmd.v "opam" % "list" % "-A" % "-s" % "--color=never") |>
-    Exec.run_out |>
-    Exec.out_lines |>
-    Exec.success |>
-    result |>
-    list_split_bunch 255 (* NOTE: Smallest value of MAX_ARG: https://www.in-ulm.de/~mascheck/various/argmax/ *)
+  let dst = dst // ".opam-repository" in
+  let () =
+    if result (Dir.exists dst) then
+      (Cmd.v "git" % "-C" % Fpath.to_string dst % "pull" % "origin") |>
+      Exec.run_out |>
+      Exec.out_null |>
+      Exec.success |>
+      result
+    else
+      (Cmd.v "git" % "clone" % "https://github.com/ocaml/opam-repository.git" % Fpath.to_string dst) |>
+      Exec.run_out |>
+      Exec.out_null |>
+      Exec.success |>
+      result
   in
-  let opam_show pkgs =
-    (Cmd.v "opam" % "show" % "--color=never" % "-f" % "package" %% Cmd.of_list pkgs) |>
-    Exec.run_out |>
-    Exec.out_lines |>
-    Exec.success |>
-    result
+  let packages =
+    (* XXX If there isn't an OpamRepository function to do this, there should be! *)
+    let f package latest =
+      let open OpamPackage in
+      try
+        if OpamPackage.Version.compare package.version (OpamPackage.Name.Map.find package.name latest).version = 1 then
+          OpamPackage.Name.Map.add package.name package latest
+        else
+          latest
+      with Not_found -> OpamPackage.Name.Map.add package.name package latest
+    in
+    OpamPackage.Set.fold f (OpamRepository.packages (OpamFilename.Dir.of_string (Fpath.to_string dst))) OpamPackage.Name.Map.empty
   in
-  List.map opam_show pkgs_bunch |> List.concat |> List.sort_uniq String.compare
+  OpamPackage.Name.Map.values (OpamPackage.Name.Map.map OpamPackage.to_string packages)
 
 let check ~dst pkg =
   let tmpdir = dst // "tmp" in

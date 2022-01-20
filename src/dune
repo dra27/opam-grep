@@ -5,7 +5,8 @@
   progress
   cmdliner
   fpath
-  bos))
+  bos
+  opam-repository))
 
 (rule
  (target config.ml)
